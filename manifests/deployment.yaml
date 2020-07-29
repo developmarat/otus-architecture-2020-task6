@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: task6-deployment
+  labels:
+    app: task6-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: task6-app
+  template:
+    metadata:
+      labels:
+        app: task6-app
+    spec:
+      containers:
+        - name: task6
+          image: developmarat/task6:v1
+          env:
+            - name: DATABASE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: task6-config
+                  key: DATABASE_HOST
+            - name: DATABASE_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: task6-config
+                  key: DATABASE_DB
+            - name: DATABASE_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: task6-config
+                  key: DATABASE_USER
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: task6-secret
+                  key: DATABASE_PASSWORD
+            - name: CACHE_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: task6-config
+                  key: CACHE_ENABLED
+          ports:
+            - name: web
+              containerPort: 8000
+          livenessProbe:
+            httpGet:
+              port: 8000
+              path: /health
+            initialDelaySeconds: 135
+            periodSeconds: 5
+            timeoutSeconds: 2
+          readinessProbe:
+            httpGet:
+              port: 8000
+              path: /health
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            failureThreshold: 20

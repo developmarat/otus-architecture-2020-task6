@@ -1,0 +1,57 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: task6-initdb
+spec:
+  template:
+    metadata:
+      name: task6-initdb
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: post-install-job
+          env:
+            - name: DATABASE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: task6-config
+                  key: DATABASE_HOST
+            - name: DATABASE_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: task6-config
+                  key: DATABASE_DB
+            - name: DATABASE_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: task6-config
+                  key: DATABASE_USER
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: task6-secret
+                  key: DATABASE_PASSWORD
+          image: postgres:latest
+          command:
+            - sh
+            - "-c"
+            - |
+              until pg_isready -h $DATABASE_HOST;
+                do echo waiting for database; sleep 2;
+              done;
+              psql postgresql://$DATABASE_USER:$DATABASE_PASSWORD@$DATABASE_HOST/$DATABASE_DB <<'EOF'
+              create table product
+              (
+                  id            bigserial not null
+                      constraint product_pk
+                          primary key,
+                  name          varchar(256),
+                  brand         varchar(256),
+                  model         varchar(256),
+                  diagonal_inch double precision,
+                  storage_gb    double precision,
+                  ram_gb        double precision,
+                  camera_pixel  double precision
+              );
+              EOF
+  backoffLimit: 0
